@@ -1,29 +1,59 @@
-!<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="eng">
 <head>
     <meta charset="UTF-8">
-    <meta name ="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Face Emotion Recognition</title>
     <script defer src="face-api.min.js"></script>
     <script defer src="script.js"></script>
     <style>
+        * { box-sizing: border-box; }
         body {
-        margin: 0;
+            margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
             display: flex;
-            justify-self: center;
+            justify-content: center;
             align-items: center;
+            background: #111;
         }
-
         canvas {
             position: absolute;
+        }
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 1.1rem;
+            gap: 16px;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #333;
+            border-top-color: #6ee7b7;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <span>Loading models...</span>
+    </div>
     <video id="video" width="720" height="560" autoplay muted></video>
 </body>
 </html>
