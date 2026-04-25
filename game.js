@@ -89,3 +89,50 @@ function onVideoReady() {
     canvas.height = video.videoHeight || 560
     runCountdown()
 }
+
+// ── Countdown ───────────────────────────────────────────────
+function runCountdown() {
+    countdown.classList.remove('hidden')
+    let count = 3
+    countdown.textContent = count
+
+    const tick = setInterval(() => {
+        count--
+        if (count <= 0) {
+            clearInterval(tick)
+            countdown.classList.add('hidden')
+            startRound()
+        } else {
+            countdown.textContent = count
+        }
+    }, 1000)
+}
+
+// ── Round helpers ───────────────────────────────────────────
+function getRoundConfig(roundIndex) {
+    return roundIndex < ROUNDS.length ? ROUNDS[roundIndex] : HARD_ROUND
+}
+
+function pickEmotion(pool) {
+    const available = pool.filter(e => e !== lastTarget)
+    return available[Math.floor(Math.random() * available.length)]
+}
+
+// ── Start round ─────────────────────────────────────────────
+function startRound() {
+    gameActive = true
+    const config  = getRoundConfig(round)
+    currentTarget = pickEmotion(config.pool)
+    lastTarget    = currentTarget
+    timerDuration = config.timeMs
+
+    targetEmoji.textContent  = EMOTION_EMOJI[currentTarget]
+    targetWord.textContent   = currentTarget.toUpperCase()
+    roundDisplay.textContent = round + 1
+    timerBar.style.background = '#6ee7b7'
+    timerBar.style.width      = '100%'
+
+    timerStart = performance.now()
+    animateTimer()
+    startDetection()
+}
