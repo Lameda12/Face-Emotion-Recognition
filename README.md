@@ -20,6 +20,8 @@ Interactive face game — mirror the displayed emotion before the timer runs out
 - 3 misses = Game Over
 - Open `game.html` to play (or click the button from the live view)
 
+https://github.com/Lameda12/Face-Emotion-Recognition/raw/main/gameemotionvideo.mp4
+
 ## How to run
 
 ```bash
