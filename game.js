@@ -42,3 +42,50 @@ let timerDuration     = null
 let timerRaf          = null
 let detectionInterval = null
 let gameActive        = false
+
+// ── DOM refs ────────────────────────────────────────────────
+const video        = document.getElementById('video')
+const canvas       = document.getElementById('cam-canvas')
+const loader       = document.getElementById('loader')
+const countdown    = document.getElementById('countdown')
+const flash        = document.getElementById('flash')
+const scorePopup   = document.getElementById('score-popup')
+const gameover     = document.getElementById('gameover')
+const scoreDisplay = document.getElementById('score-display')
+const roundDisplay = document.getElementById('round-display')
+const missDisplay  = document.getElementById('misses')
+const targetEmoji  = document.getElementById('target-emoji')
+const targetWord   = document.getElementById('target-word')
+const timerBar     = document.getElementById('timer-bar')
+const goScore      = document.getElementById('go-score')
+const goRounds     = document.getElementById('go-rounds')
+const btnReplay    = document.getElementById('btn-replay')
+
+// ── Boot ────────────────────────────────────────────────────
+Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+    faceapi.nets.faceExpressionNet.loadFromUri('/models'),
+]).then(() => {
+    loader.style.display = 'none'
+    startCamera()
+}).catch(err => {
+    loader.querySelector('span').textContent = 'Failed to load models: ' + err.message
+})
+
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'user' } } })
+        .then(stream => {
+            video.srcObject = stream
+            video.addEventListener('play', onVideoReady, { once: true })
+        })
+        .catch(() => {
+            loader.style.display = 'flex'
+            loader.querySelector('span').textContent = 'Camera access denied. Please allow camera and reload.'
+        })
+}
+
+function onVideoReady() {
+    canvas.width  = video.videoWidth  || 720
+    canvas.height = video.videoHeight || 560
+    runCountdown()
+}
