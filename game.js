@@ -164,3 +164,46 @@ function animateTimer() {
 
     timerRaf = requestAnimationFrame(frame)
 }
+
+// ── Detection ────────────────────────────────────────────────
+function startDetection() {
+    if (detectionInterval) clearInterval(detectionInterval)
+
+    detectionInterval = setInterval(async () => {
+        if (!gameActive) return
+
+        const detections = await faceapi
+            .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+            .withFaceExpressions()
+
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        if (detections.length === 0) return
+
+        const det        = detections[0]
+        const expressions = det.expressions
+        const entries    = Object.entries(expressions)
+        const [dominantEmotion, confidence] = entries.reduce((a, b) => a[1] > b[1] ? a : b)
+
+        const { x, y, width, height } = det.detection.box
+        const scaleX = canvas.width  / (video.videoWidth  || 720)
+        const scaleY = canvas.height / (video.videoHeight || 560)
+        const color  = EMOTION_COLORS[dominantEmotion] || '#fff'
+
+        ctx.strokeStyle = color
+        ctx.lineWidth   = 3
+        ctx.strokeRect(x * scaleX, y * scaleY, width * scaleX, height * scaleY)
+
+        if (dominantEmotion === currentTarget && confidence > 0.5) {
+            onHit()
+        }
+    }, 100)
+}
+
+function stopDetection() {
+    if (detectionInterval) {
+        clearInterval(detectionInterval)
+        detectionInterval = null
+    }
+}
