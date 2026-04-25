@@ -115,7 +115,8 @@ function getRoundConfig(roundIndex) {
 
 function pickEmotion(pool) {
     const available = pool.filter(e => e !== lastTarget)
-    return available[Math.floor(Math.random() * available.length)]
+    const from = available.length > 0 ? available : pool
+    return from[Math.floor(Math.random() * from.length)]
 }
 
 // ── Start round ─────────────────────────────────────────────
@@ -168,11 +169,13 @@ function animateTimer() {
 // ── Detection ────────────────────────────────────────────────
 function startDetection() {
     if (detectionInterval) clearInterval(detectionInterval)
+    let pending = false
 
     detectionInterval = setInterval(async () => {
-        if (!gameActive) return
-
-        const detections = await faceapi
+        if (!gameActive || pending) return
+        pending = true
+        try {
+            const detections = await faceapi
             .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
             .withFaceExpressions()
 
@@ -197,6 +200,9 @@ function startDetection() {
 
         if (dominantEmotion === currentTarget && confidence > 0.5) {
             onHit()
+        }
+        } finally {
+            pending = false
         }
     }, 100)
 }
@@ -284,6 +290,8 @@ function showGameOver() {
 
 // ── Replay ───────────────────────────────────────────────────
 btnReplay.addEventListener('click', () => {
+    if (timerRaf) cancelAnimationFrame(timerRaf)
+    stopDetection()
     score         = 0
     round         = 0
     misses        = 0
