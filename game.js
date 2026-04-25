@@ -270,3 +270,33 @@ function showScorePopup(text) {
         scorePopup.style.top = '50%'
     }, 600)
 }
+
+// ── Game Over ────────────────────────────────────────────────
+function showGameOver() {
+    stopDetection()
+    cancelAnimationFrame(timerRaf)
+    gameActive = false
+
+    goScore.textContent  = score
+    goRounds.textContent = round
+    gameover.classList.remove('hidden')
+}
+
+// ── Replay ───────────────────────────────────────────────────
+btnReplay.addEventListener('click', () => {
+    score         = 0
+    round         = 0
+    misses        = 0
+    currentTarget = null
+    lastTarget    = null
+    gameActive    = false
+
+    scoreDisplay.textContent  = '0'
+    roundDisplay.textContent  = '1'
+    missDisplay.textContent   = '○○○'
+    timerBar.style.width      = '100%'
+    timerBar.style.background = '#6ee7b7'
+    gameover.classList.add('hidden')
+
+    runCountdown()
+})
