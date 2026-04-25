@@ -42,6 +42,7 @@ let timerDuration     = null
 let timerRaf          = null
 let detectionInterval = null
 let gameActive        = false
+let nextRoundTimeout  = null
 
 // ── DOM refs ────────────────────────────────────────────────
 const video        = document.getElementById('video')
@@ -63,8 +64,8 @@ const btnReplay    = document.getElementById('btn-replay')
 
 // ── Boot ────────────────────────────────────────────────────
 Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-    faceapi.nets.faceExpressionNet.loadFromUri('/models'),
+    faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+    faceapi.nets.faceExpressionNet.loadFromUri('./models'),
 ]).then(() => {
     loader.style.display = 'none'
     startCamera()
@@ -190,8 +191,12 @@ function startDetection() {
         const [dominantEmotion, confidence] = entries.reduce((a, b) => a[1] > b[1] ? a : b)
 
         const { x, y, width, height } = det.detection.box
-        const scaleX = canvas.width  / (video.videoWidth  || 720)
-        const scaleY = canvas.height / (video.videoHeight || 560)
+        const displayW = canvas.offsetWidth  || canvas.width
+        const displayH = canvas.offsetHeight || canvas.height
+        if (canvas.width !== displayW)  canvas.width  = displayW
+        if (canvas.height !== displayH) canvas.height = displayH
+        const scaleX = displayW / (video.videoWidth  || 720)
+        const scaleY = displayH / (video.videoHeight || 560)
         const color  = EMOTION_COLORS[dominantEmotion] || '#fff'
 
         ctx.strokeStyle = color
@@ -232,7 +237,7 @@ function onHit() {
     showScorePopup('+' + points)
 
     round++
-    setTimeout(startRound, 900)
+    nextRoundTimeout = setTimeout(startRound, 900)
 }
 
 // ── Miss ─────────────────────────────────────────────────────
@@ -249,7 +254,7 @@ function onMiss() {
         setTimeout(showGameOver, 600)
     } else {
         round++
-        setTimeout(startRound, 900)
+        nextRoundTimeout = setTimeout(startRound, 900)
     }
 }
 
@@ -286,10 +291,13 @@ function showGameOver() {
     goScore.textContent  = score
     goRounds.textContent = round
     gameover.classList.remove('hidden')
+    btnReplay.disabled = false
 }
 
 // ── Replay ───────────────────────────────────────────────────
 btnReplay.addEventListener('click', () => {
+    btnReplay.disabled = true
+    if (nextRoundTimeout) { clearTimeout(nextRoundTimeout); nextRoundTimeout = null }
     if (timerRaf) cancelAnimationFrame(timerRaf)
     stopDetection()
     score         = 0
