@@ -136,3 +136,31 @@ function startRound() {
     animateTimer()
     startDetection()
 }
+
+// ── Timer bar ────────────────────────────────────────────────
+function animateTimer() {
+    if (timerRaf) cancelAnimationFrame(timerRaf)
+
+    function frame(now) {
+        if (!gameActive) return
+        const elapsed = now - timerStart
+        const pct     = Math.max(0, 1 - elapsed / timerDuration)
+        timerBar.style.width = (pct * 100) + '%'
+
+        if (pct < 0.3) {
+            timerBar.style.background = '#ef4444'
+        } else if (pct < 0.6) {
+            timerBar.style.background = '#f59e0b'
+        } else {
+            timerBar.style.background = '#6ee7b7'
+        }
+
+        if (pct <= 0) {
+            onMiss()
+        } else {
+            timerRaf = requestAnimationFrame(frame)
+        }
+    }
+
+    timerRaf = requestAnimationFrame(frame)
+}
