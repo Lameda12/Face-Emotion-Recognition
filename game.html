@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Gym — Mirror Match</title>
+    <script defer src="face-api.min.js"></script>
+    <script defer src="game.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #0f0f0f;
+            color: #fff;
+            font-family: sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background: #1a1a1a;
+            font-size: 1.1rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        #misses { font-size: 1.4rem; letter-spacing: 4px; }
+
+        #game-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #cam-side {
+            position: relative;
+            flex: 1;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #cam-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #target-side {
+            width: 340px;
+            flex-shrink: 0;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 24px;
+        }
+        #target-emoji { font-size: 7rem; line-height: 1; }
+        #target-word {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        #timer-bar-wrap {
+            width: 100%;
+            height: 14px;
+            background: #333;
+            border-radius: 7px;
+            overflow: hidden;
+        }
+        #timer-bar {
+            height: 100%;
+            background: #6ee7b7;
+            border-radius: 7px;
+            transition: width 0.1s linear, background 0.3s;
+            width: 100%;
+        }
+
+        #flash {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 5;
+        }
+        #flash.green { background: rgba(34,197,94,0.25); }
+        #flash.red   { background: rgba(239,68,68,0.25); }
+        #flash.show  { opacity: 1; }
+
+        #score-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #22c55e;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s, top 0.4s;
+            z-index: 6;
+        }
+
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #0f0f0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            gap: 16px;
+            font-size: 1.1rem;
+        }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 5px solid #333;
+            border-top-color: #6ee7b7;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #countdown {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 15;
+            font-size: 8rem;
+            font-weight: bold;
+        }
+        #countdown.hidden { display: none; }
+
+        #gameover {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 18;
+            gap: 20px;
+        }
+        #gameover.hidden { display: none; }
+        #gameover h1 { font-size: 3rem; color: #ef4444; }
+        #gameover .stat { font-size: 1.4rem; color: #ccc; }
+        #gameover .stat span { color: #fff; font-weight: bold; }
+        #btn-replay {
+            margin-top: 12px;
+            padding: 14px 36px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: #6ee7b7;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #btn-replay:hover { background: #34d399; }
+        #link-live {
+            color: #6ee7b7;
+            font-size: 0.95rem;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <span>Loading models...</span>
+    </div>
+
+    <div id="countdown" class="hidden">3</div>
+
+    <div id="flash"></div>
+
+    <div id="score-popup"></div>
+
+    <div id="gameover" class="hidden">
+        <h1>Game Over</h1>
+        <div class="stat">Score: <span id="go-score">0</span></div>
+        <div class="stat">Rounds survived: <span id="go-rounds">0</span></div>
+        <button id="btn-replay">Play Again</button>
+        <a id="link-live" href="index.html">← Live View</a>
+    </div>
+
+    <div id="topbar">
+        <div>Score: <span id="score-display">0</span></div>
+        <div>Round: <span id="round-display">1</span></div>
+        <div id="misses">●○○</div>
+    </div>
+
+    <div id="game-area">
+        <div id="cam-side">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="cam-canvas"></canvas>
+        </div>
+        <div id="target-side">
+            <div id="target-emoji">😄</div>
+            <div id="target-word">HAPPY</div>
+            <div id="timer-bar-wrap">
+                <div id="timer-bar"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
