@@ -207,3 +207,66 @@ function stopDetection() {
         detectionInterval = null
     }
 }
+
+// ── Hit ──────────────────────────────────────────────────────
+function onHit() {
+    if (!gameActive) return
+    gameActive = false
+    stopDetection()
+    cancelAnimationFrame(timerRaf)
+
+    const elapsed     = performance.now() - timerStart
+    const msRemaining = Math.max(0, timerDuration - elapsed)
+    const bonus       = Math.floor(msRemaining / 100)
+    const points      = 100 + bonus
+    score += points
+
+    scoreDisplay.textContent = score
+    showFlash('green')
+    showScorePopup('+' + points)
+
+    round++
+    setTimeout(startRound, 900)
+}
+
+// ── Miss ─────────────────────────────────────────────────────
+function onMiss() {
+    if (!gameActive) return
+    gameActive = false
+    stopDetection()
+
+    misses++
+    updateMissDots()
+    showFlash('red')
+
+    if (misses >= MAX_MISSES) {
+        setTimeout(showGameOver, 600)
+    } else {
+        round++
+        setTimeout(startRound, 900)
+    }
+}
+
+// ── Miss dots ────────────────────────────────────────────────
+function updateMissDots() {
+    const filled = '●'.repeat(misses)
+    const empty  = '○'.repeat(MAX_MISSES - misses)
+    missDisplay.textContent = filled + empty
+}
+
+// ── Flash ────────────────────────────────────────────────────
+function showFlash(color) {
+    flash.className = color + ' show'
+    setTimeout(() => { flash.className = '' }, 300)
+}
+
+// ── Score popup ──────────────────────────────────────────────
+function showScorePopup(text) {
+    scorePopup.textContent = text
+    scorePopup.style.opacity = '1'
+    scorePopup.style.top = '45%'
+    setTimeout(() => {
+        scorePopup.style.opacity = '0'
+        scorePopup.style.top = '50%'
+    }, 600)
+}
